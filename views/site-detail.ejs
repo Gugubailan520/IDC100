@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= site.name %> - IDC百站计划</title>
+  
+  <!-- 引入Vue 3 -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  
+  <!-- 引入Element Plus UI库 -->
+  <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+  <script src="https://unpkg.com/element-plus"></script>
+  
+  <!-- 引入自定义样式 -->
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>IDC百站计划</h1>
+      <nav>
+        <a href="/">首页</a>
+        <a href="/admin/add">添加站点</a>
+        <a href="/api/random">API</a>
+      </nav>
+    </div>
+  </header>
+  
+  <main class="container" id="site-detail-app">
+    <el-card class="site-detail-card" shadow="hover">
+      <template #header>
+        <div class="card-header">
+          <span>站点详情</span>
+
+        </div>
+      </template>
+      
+      <div v-if="site" class="site-detail-content">
+        <!-- 站点头部信息 -->
+        <div class="site-header">
+          <el-avatar :size="120" :src="site.logo" class="site-detail-logo">
+            <el-icon v-if="!site.logo"><Building /></el-icon>
+          </el-avatar>
+          <div class="site-info">
+            <h2><%= site.name %></h2>
+            <el-tag type="info" size="small" class="site-id">ID: <%= site.id %></el-tag>
+
+          </div>
+        </div>
+        
+        <!-- 站点基本信息 -->
+        <el-card class="mt-4" size="small" title="基本信息">
+          <el-descriptions :column="{xs: 1, sm: 2, md: 3, lg: 4}" :border="true">
+            <el-descriptions-item label="创建时间">
+              <span v-if="site.createdAt">{{ formatDate(site.createdAt) }}</span>
+              <span v-else>猫猫不知道哦</span>
+            </el-descriptions-item>
+            <el-descriptions-item label="更新时间">
+              <span v-if="site.updatedAt">{{ formatDate(site.updatedAt) }}</span>
+              <span v-else>猫猫不知道哦</span>
+            </el-descriptions-item>
+            <el-descriptions-item label="官网地址" :span="{xs: 1, sm: 2}">
+              <a :href="site.website" target="_blank" class="text-primary break-all">{{ site.website }}</a>
+            </el-descriptions-item>
+          </el-descriptions>
+        </el-card>
+        
+        <!-- 站点简介 -->
+        <el-card class="mt-4" size="small" title="站点简介" v-if="site.description">
+          <span>站点简介</span>
+          <br></br>
+          <p class="description-text">{{ site.description }}</p>
+        </el-card>
+        
+        <!-- 站长联系方式 -->
+        <el-card class="mt-4" size="small" title="站长信息" v-if="site.contact && (site.contact.qq || site.contact.name)">
+          <span>站长联系方式</span>
+          <br></br>
+          <div class="contact-item">
+            <el-avatar v-if="site.contact.qq" :size="80" :src="getQQAvatar(site.contact.qq)"></el-avatar>
+            <div class="contact-details">
+              <el-descriptions :column="1" :border="true">
+                <el-descriptions-item label="名称">{{ site.contact.name || '未知' }}</el-descriptions-item>
+                <el-descriptions-item label="QQ" v-if="site.contact.qq">{{ site.contact.qq }}</el-descriptions-item>
+              </el-descriptions>
+            </div>
+          </div>
+        </el-card>
+        
+        <!-- 交流群信息 -->
+        <el-card class="mt-4" size="small" title="交流群" v-if="site.group">
+          <el-descriptions :column="1" :border="true">
+            <el-descriptions-item label="交流群">{{ site.group }}</el-descriptions-item>
+          </el-descriptions>
+        </el-card>
+        
+        <!-- 站点图片 -->
+        <el-card class="mt-4" size="small" title="站点图片" v-if="site.images && site.images.length > 0">
+          <span>站点图片</span>
+          <br></br>
+          <el-image-viewer v-if="showViewer" :url-list="site.images" @close="showViewer = false"></el-image-viewer>
+          <div class="image-gallery">
+            <div v-for="(image, index) in site.images" :key="index" class="gallery-item">
+              <el-image :src="image" :preview-src-list="site.images" :initial-index="index" @click="showViewer = true" fit="cover"></el-image>
+            </div>
+          </div>
+        </el-card>
+      </div>
+      
+      <!-- 加载状态 -->
+      <div v-else class="loading-state">
+        <el-skeleton :row="6"></el-skeleton>
+      </div>
+    </el-card>
+  </main>
+  
+  <footer>
+    <div class="container">
+      <p>&copy; <%= new Date().getFullYear() %> IDC百站计划 - 免费的IDC广告平台</p>
+    </div>
+  </footer>
+  
+  <script>
+    // 初始化Vue应用
+    const { createApp } = Vue;
+    
+    // 从后端获取的数据
+    const initialData = {
+      site: <%- JSON.stringify(site) %>
+    };
+    
+    const app = createApp({
+      data() {
+        return {
+          site: initialData.site,
+          showViewer: false
+        };
+      },
+      methods: {
+        // 格式化日期
+        formatDate(dateString) {
+          if (!dateString) return '';
+          const date = new Date(dateString);
+          return date.toLocaleString('zh-CN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+        },
+        
+        // 获取QQ头像
+        getQQAvatar(qq) {
+          return `https://q1.qlogo.cn/g?b=qq&nk=${qq}&s=100`;
+        },
+        
+        // 返回列表页
+        goBack() {
+          window.location.href = '/';
+        },
+        
+        // 获取随机站点
+        getRandomSite() {
+          fetch('/api/random')
+            .then(response => response.json())
+            .then(site => {
+              if (site) {
+                window.location.href = `/site/${site.id}`;
+              } else {
+                window.ElementPlus.ElMessage.error('暂无可用站点');
+              }
+            })
+            .catch(error => {
+              console.error('获取随机站点失败:', error);
+              window.ElementPlus.ElMessage.error('获取随机站点失败');
+            });
+        }
+      },
+      mounted() {
+        // 注册Element Plus组件
+        this.$message = window.ElementPlus.ElMessage;
+        this.$notification = window.ElementPlus.ElNotification;
+        this.$confirm = window.ElementPlus.ElMessageBox.confirm;
+      }
+    });
+    
+    // 使用Element Plus
+    app.use(ElementPlus);
+    
+    // 挂载应用
+    app.mount('#site-detail-app');
+  </script>
+</body>
+</html>

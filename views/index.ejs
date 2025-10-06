@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IDC百站计划 - 免费的IDC广告平台</title>
+  
+  <!-- 引入Vue 3 -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  
+  <!-- 引入Element Plus UI库 -->
+  <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+  <script src="https://unpkg.com/element-plus"></script>
+  
+  <!-- 引入自定义样式 -->
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>IDC百站计划</h1>
+      <nav>
+        <a href="/">首页</a>
+        <a href="/admin/add">添加站点</a>
+        <a href="/api/random">API</a>
+      </nav>
+    </div>
+  </header>
+  
+  <main class="container" id="home-app">
+    <!-- 使用Element Plus的消息组件 -->
+    <el-message v-if="message" :message="message" :type="messageType || 'info'" show-close></el-message>
+    
+
+    
+    <!-- 使用Element Plus的加载组件 -->
+    <el-skeleton v-if="loading" :count="4">
+      <template #template>
+        <div style="display: flex; flex-direction: column; align-items: center; padding: 20px;">
+          <el-skeleton-item style="width: 80px; height: 80px; border-radius: 4px;"></el-skeleton-item>
+          <el-skeleton-item style="width: 60%; height: 24px; margin-top: 16px;"></el-skeleton-item>
+          <el-skeleton-item style="width: 40%; height: 18px; margin-top: 8px;"></el-skeleton-item>
+          <el-skeleton-item style="width: 50%; height: 20px; margin-top: 8px;"></el-skeleton-item>
+        </div>
+      </template>
+    </el-skeleton>
+    
+    <!-- 使用Element Plus的卡片组件展示站点 -->
+    <div class="sites-grid" v-else-if="sites && sites.length > 0">
+      <el-card v-for="site in sites" :key="site.id" class="site-card" :body-style="{padding: '20px'}">
+        <div class="card-content" @click="goToSiteDetail(site.id)">
+          <img :src="site.logo" :alt="site.name" class="site-logo">
+          <h3>{{ site.name }}</h3>
+          <p class="site-website">{{ site.website }}</p>
+          <div class="site-tags" v-if="site.tags && site.tags.length">
+            <el-tag v-for="tag in site.tags" :key="tag" type="info" size="small">{{ tag }}</el-tag>
+          </div>
+        </div>
+        <div class="card-actions">
+          <el-button type="primary" size="small" @click.stop="visitSite(site.website)">访问官网</el-button>
+          <el-button size="small" @click.stop="goToSiteDetail(site.id)">查看详情</el-button>
+        </div>
+      </el-card>
+    </div>
+    
+    <!-- 空状态展示 -->
+    <div v-else class="empty-state">
+      <el-empty description="暂无站点数据" :image-size="120">
+        <el-button type="primary" @click="$router ? $router.push('/admin/add') : window.location.href = '/admin/add'">添加第一个站点</el-button>
+      </el-empty>
+    </div>
+  </main>
+  
+  <footer>
+    <div class="container">
+      <p>&copy; <%= new Date().getFullYear() %> IDC百站计划 - 免费的IDC广告平台</p>
+    </div>
+  </footer>
+  
+  <!-- 引入Vue应用脚本 -->
+  <script src="/js/app.js"></script>
+  <script>
+    // 从后端获取的数据
+    const initialData = {
+      message: <%- typeof message !== 'undefined' ? JSON.stringify(message) : 'null' %>,
+      messageType: <%- typeof messageType !== 'undefined' ? JSON.stringify(messageType) : 'null' %>,
+      sites: <%- typeof sites !== 'undefined' ? JSON.stringify(sites) : '[]' %>
+    };
+    
+    // 使用app.js中已声明的createApp函数
+    const app = createApp({
+      data() {
+        return {
+          message: initialData.message,
+          messageType: initialData.messageType,
+          sites: initialData.sites,
+          loading: false
+        };
+      },
+      methods: {
+        // 跳转到站点详情页
+        goToSiteDetail(siteId) {
+          window.location.href = `/site/${siteId}`;
+        },
+        // 访问站点官网
+        visitSite(website) {
+          window.open(website, '_blank');
+        }
+      },
+      mounted() {
+        // 注册Element Plus组件
+        this.$message = window.ElementPlus.ElMessage;
+        this.$notification = window.ElementPlus.ElNotification;
+        this.$confirm = window.ElementPlus.ElMessageBox.confirm;
+      }
+    });
+    
+    // 使用Element Plus
+    app.use(ElementPlus);
+    
+    // 挂载应用
+    app.mount('#home-app');
+  </script>
+</body>
+</html>

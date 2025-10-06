@@ -1,0 +1,15 @@
+# 服务器配置
+server:
+  port: 3000
+
+# 数据库配置
+database:
+  host: 127.0.0.1
+  port: 27017
+  username: root
+  password: 123456789
+  name: IDC100
+  # 其他可选配置
+  options:
+    useNewUrlParser: true
+    useUnifiedTopology: true

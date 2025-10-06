@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>添加站点 - IDC百站计划</title>
+  
+  <!-- 引入Vue 3 -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  
+  <!-- 引入Element Plus UI库 -->
+  <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+  <script src="https://unpkg.com/element-plus"></script>
+  
+  <!-- 引入自定义样式 -->
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>IDC百站计划</h1>
+      <nav>
+        <a href="/">首页</a>
+        <a href="/admin/add">添加站点</a>
+        <a href="/api/random">API</a>
+      </nav>
+    </div>
+  </header>
+  
+  <main class="container" id="add-site-app">
+    <el-card class="site-form-card">
+      <template #header>
+        <div class="card-header">
+          <span>添加站点</span>
+        </div>
+      </template>
+      
+      <el-form ref="siteForm" :model="siteForm" :rules="formRules" label-width="100px" size="default">
+        <el-form-item label="站点名称" prop="name">
+          <el-input v-model="siteForm.name" placeholder="请输入站点名称" clearable></el-input>
+        </el-form-item>
+        
+        <el-form-item label="ID" prop="id">
+          <el-input v-model="siteForm.id" placeholder="请输入唯一标识符" clearable></el-input>
+        </el-form-item>
+        
+        <el-form-item label="Logo URL" prop="logo">
+          <el-input v-model="siteForm.logo" placeholder="请输入Logo图片URL" clearable></el-input>
+        </el-form-item>
+        
+        <el-form-item label="官网 URL" prop="website">
+          <el-input v-model="siteForm.website" placeholder="请输入官网地址" clearable prefix-icon="Link"></el-input>
+        </el-form-item>
+        
+        <el-form-item label="站点简介" prop="description">
+          <el-input v-model="siteForm.description" type="textarea" :rows="4" placeholder="请输入站点简介"></el-input>
+        </el-form-item>
+        
+        <el-form-item label="站长名称" prop="contactName">
+          <el-input v-model="siteForm.contactName" placeholder="请输入站长名称" clearable></el-input>
+        </el-form-item>
+        
+        <el-form-item label="QQ号码" prop="qq">
+          <el-input v-model="siteForm.qq" placeholder="请输入QQ号码" clearable></el-input>
+        </el-form-item>
+        
+        <el-form-item label="交流群" prop="group">
+          <el-input v-model="siteForm.group" placeholder="请输入交流群号" clearable></el-input>
+        </el-form-item>
+        
+        <el-form-item label="简介图" prop="images">
+          <el-input v-model="siteForm.images" type="textarea" :rows="5" placeholder="请输入图片URL，一行一个"></el-input>
+          <div class="form-tip">每行输入一个图片URL，多个图片将展示为轮播图</div>
+        </el-form-item>
+        
+        <el-form-item>
+          <el-button type="primary" @click="submitForm" :loading="loading">添加站点</el-button>
+          <el-button @click="resetForm">重置</el-button>
+          <el-button @click="goBack">返回首页</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
+  </main>
+  
+  <footer>
+    <div class="container">
+      <p>&copy; <%= new Date().getFullYear() %> IDC百站计划 - 免费的IDC广告平台</p>
+    </div>
+  </footer>
+  
+  <script>
+    // 初始化Vue应用
+    const { createApp } = Vue;
+    
+    const app = createApp({
+      data() {
+        return {
+          loading: false,
+          siteForm: {
+            name: '',
+            id: '',
+            logo: '',
+            website: '',
+            description: '',
+            contactName: '',
+            qq: '',
+            group: '',
+            images: '',
+            tags: []
+          },
+          // 表单验证规则
+          formRules: {
+            name: [
+              { required: true, message: '请输入站点名称', trigger: 'blur' },
+              { min: 2, max: 50, message: '站点名称长度在 2 到 50 个字符', trigger: 'blur' }
+            ],
+            id: [
+              { required: true, message: '请输入ID', trigger: 'blur' },
+              { pattern: /^[a-zA-Z0-9_]+$/, message: 'ID只能包含字母、数字和下划线', trigger: 'blur' },
+              { min: 2, max: 30, message: 'ID长度在 2 到 30 个字符', trigger: 'blur' }
+            ],
+            logo: [
+              { required: true, message: '请输入Logo URL', trigger: 'blur' },
+              { type: 'url', message: '请输入有效的URL', trigger: 'blur' }
+            ],
+            website: [
+              { required: true, message: '请输入官网URL', trigger: 'blur' },
+              { type: 'url', message: '请输入有效的URL', trigger: 'blur' }
+            ]
+          }
+        };
+      },
+      methods: {
+        // 提交表单
+        submitForm() {
+          this.$refs.siteForm.validate((valid) => {
+            if (valid) {
+              this.loading = true;
+              
+              // 处理图片数组
+              const formData = { ...this.siteForm };
+              if (formData.images) {
+                formData.images = formData.images.split('\n').filter(img => img.trim());
+              } else {
+                formData.images = [];
+              }
+              
+              // 提交表单数据
+              fetch('/admin/add', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+              })
+              .then(response => response.json())
+              .then(data => {
+                if (data.success) {
+                  window.ElementPlus.ElMessage.success(data.message || '站点添加成功！');
+                  this.resetForm();
+                  // 可以选择跳转到首页
+                  // window.location.href = '/';
+                } else {
+                  window.ElementPlus.ElMessage.error(data.message || '站点添加失败！');
+                }
+              })
+              .catch(error => {
+                console.error('提交失败:', error);
+                window.ElementPlus.ElMessage.error('网络错误，请稍后重试！');
+              })
+              .finally(() => {
+                this.loading = false;
+              });
+            } else {
+              window.ElementPlus.ElMessage.warning('请检查表单信息！');
+              return false;
+            }
+          });
+        },
+        
+        // 重置表单
+        resetForm() {
+          this.$refs.siteForm.resetFields();
+        },
+        
+        // 返回首页
+        goBack() {
+          window.location.href = '/';
+        }
+      },
+      mounted() {
+        // 注册Element Plus组件
+        this.$message = window.ElementPlus.ElMessage;
+        this.$notification = window.ElementPlus.ElNotification;
+        this.$confirm = window.ElementPlus.ElMessageBox.confirm;
+      }
+    });
+    
+    // 使用Element Plus
+    app.use(ElementPlus);
+    
+    // 挂载应用
+    app.mount('#add-site-app');
+  </script>
+</body>
+</html>
